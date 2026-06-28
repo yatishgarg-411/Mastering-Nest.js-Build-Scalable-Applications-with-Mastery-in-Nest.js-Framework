@@ -1,6 +1,6 @@
 # Student Management API - NestJS Learning Journey
 
-A professional and beginner-friendly NestJS learning project built from scratch. This repository captures my phase-1 learning journey and includes practical examples of modules, controllers, services, dependency injection, CRUD APIs, DTO validation, and custom plus built-in pipes.
+A professional and beginner-friendly NestJS learning project built from scratch. This repository captures my learning journey so far and includes practical examples of modules, controllers, services, dependency injection, CRUD APIs, DTO validation, custom and built-in pipes, and middleware.
 
 ## Project Overview
 
@@ -8,10 +8,12 @@ This project is the first phase of learning NestJS.
 
 So far, the codebase contains:
 
-- A root application controller and service for basic routing examples
+- A user-focused application controller and service layer for middleware-driven examples
 - A `products` feature with in-memory CRUD operations
 - An `auth` feature controller showing DTO validation and pipe usage
+- A `user` flow that demonstrates middleware, request logging, user creation, and in-memory user storage
 - Both built-in and custom pipe experiments for request transformation and validation
+- Several middleware examples, including active and experimental ones
 
 ## Features Implemented
 
@@ -28,11 +30,14 @@ So far, the codebase contains:
 - Raw request access with `@Req()`
 - Exception handling with `NotFoundException`
 - Basic in-memory data storage for products
+- Basic in-memory data storage for users
 - DTO definition with `class-validator` decorators
 - Built-in pipes:
   - `ValidationPipe`
   - `ParseArrayPipe`
 - Custom pipe implementation (`phoneAuth`)
+- Middleware implementation and registration on the `user` route
+- Password hashing with `bcrypt` inside middleware
 
 ## Folder Structure
 
@@ -57,11 +62,23 @@ student-management/
 │   │   ├── auth.dto.ts
 │   │   └── customPipe/
 │   │       └── phoneAuth.ts
+│   ├── middlewares/
+│   │   ├── content_type/
+│   │   │   └── content_type.middleware.ts
+│   │   ├── login.middleware.ts
+│   │   ├── token.middleware.ts
+│   │   └── user-logging/
+│   │       └── user-logging.middleware.ts
+│   ├── services/
+│   │   └── user/
+│   │       └── user.service.ts
 │   └── products/
 │       ├── products.controller.ts
 │       ├── products.model.ts
 │       ├── products.module.ts
 │       └── products.service.ts
+│   └── userDTO/
+│       └── user.dto.ts
 └── test/
     ├── app.e2e-spec.ts
     └── jest-e2e.json
@@ -71,7 +88,7 @@ student-management/
 
 - `src/main.ts`: Application entry point; creates and starts the NestJS server.
 - `src/app.module.ts`: Root module; wires `AppController`, `AuthController`, and imports `ProductsModule`.
-- `src/app.controller.ts`: Learning routes for query params, parse pipes, request metadata, and hello response.
+- `src/app.controller.ts`: Learning routes for users, request handling, and the remaining controller examples.
 - `src/app.service.ts`: Basic service returning the hello message.
 - `src/products/products.module.ts`: Groups product controller/service as a feature module.
 - `src/products/products.controller.ts`: Product API routes.
@@ -80,6 +97,12 @@ student-management/
 - `src/auth/auth.controller.ts`: Auth registration endpoints with pipes.
 - `src/auth/auth.dto.ts`: DTO with validation rules for auth input.
 - `src/auth/customPipe/phoneAuth.ts`: Custom pipe experiment for phone/param processing.
+- `src/middlewares/user-logging/user-logging.middleware.ts`: Middleware that normalizes and stores users.
+- `src/middlewares/login.middleware.ts`: Example middleware that logs the current date.
+- `src/middlewares/token.middleware.ts`: Example middleware that validates an authorization token.
+- `src/middlewares/content_type/content_type.middleware.ts`: Example middleware that checks request content type.
+- `src/services/user/user.service.ts`: In-memory user store used by middleware and controller.
+- `src/userDTO/user.dto.ts`: DTO for user data stored by middleware.
 - `src/app.controller.spec.ts`: Unit test example.
 - `test/app.e2e-spec.ts`: End-to-end test example.
 
@@ -98,6 +121,7 @@ Response
 ### Simple Request Flow
 
 - The client sends an HTTP request.
+- Middleware can run before the controller and can inspect or modify the request.
 - A controller method receives the request.
 - The controller calls a service (if business logic is needed).
 - The service processes data and returns a result.
@@ -105,14 +129,12 @@ Response
 
 ## API Endpoints
 
-### App Routes
+### User Routes
 
 | HTTP Method | Endpoint | Purpose | Example Request Body |
 |---|---|---|---|
-| GET | `/numbers` | Parse query array using `ParseArrayPipe` (`numbers`) | Not applicable |
-| GET | `/query` | Read query param (`name`) | Not applicable |
-| GET | `/` | Return `Hello World!` from app service | Not applicable |
-| GET | `/request/:id` | Return route params, query params, and user-agent header | Not applicable |
+| POST | `/user` | Trigger the user creation flow protected by middleware | `{"name":"John","password":"secret123"}` |
+| GET | `/user` | Return the in-memory users list | Not applicable |
 
 ### Products Routes
 
@@ -185,6 +207,7 @@ npm run start:dev
 - TypeScript
 - Express (through Nest platform adapter)
 - RxJS
+- bcrypt
 - `class-validator`
 - `class-transformer`
 - Jest
@@ -233,6 +256,10 @@ Pipes are implemented in both forms:
 - Built-in: `ValidationPipe` and `ParseArrayPipe`
 - Custom: `PhoneAuthPipe` in the auth feature
 
+### Middleware
+
+Middleware is implemented for the `user` route. `UserLoggingMiddleware` logs requests, normalizes the user name, hashes the password, and stores the user in memory.
+
 ### Exception Handling
 
 `NotFoundException` is used in products service when a product is not found.
@@ -248,6 +275,18 @@ A beginner can learn the following from this repository:
 - How to validate incoming request payloads with DTO + `ValidationPipe`
 - How to create and apply custom pipes
 - How built-in parse pipes can transform incoming request values
+- How middleware can intercept requests before they reach a controller
+- How middleware can modify request data and perform pre-processing
+- How bcrypt can be used for password hashing in a learning project
+
+## Current Progress
+
+The repository currently shows progress in these areas:
+
+- CRUD feature module: `products`
+- Validation and custom pipes: `auth`
+- Middleware and request preprocessing: `user` flow
+- Request parsing examples and controller/service structure
 
 ## Future Scope
 
@@ -255,7 +294,6 @@ Likely next topics for this project:
 
 - Global validation configuration and transformation options
 - Better custom pipe patterns and reusable validation pipes
-- Middleware
 - Guards
 - Interceptors
 - Database integration
@@ -287,11 +325,23 @@ student-management/
 │   │   ├── auth.dto.ts
 │   │   └── customPipe/
 │   │       └── phoneAuth.ts
-│   └── products/
-│       ├── products.controller.ts
-│       ├── products.model.ts
-│       ├── products.module.ts
-│       └── products.service.ts
+│   ├── middlewares/
+│   │   ├── content_type/
+│   │   │   └── content_type.middleware.ts
+│   │   ├── login.middleware.ts
+│   │   ├── token.middleware.ts
+│   │   └── user-logging/
+│   │       └── user-logging.middleware.ts
+│   ├── products/
+│   │   ├── products.controller.ts
+│   │   ├── products.model.ts
+│   │   ├── products.module.ts
+│   │   └── products.service.ts
+│   ├── services/
+│   │   └── user/
+│   │       └── user.service.ts
+│   └── userDTO/
+│       └── user.dto.ts
 └── test/
     ├── app.e2e-spec.ts
     └── jest-e2e.json
